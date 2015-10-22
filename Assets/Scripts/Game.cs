@@ -5,10 +5,13 @@ using System.Collections.Generic;
 
 public class Game : MonoBehaviour 
 {
+	public Camera				cameraUI;
+	public Transform			canvas;
+
 	void Start()
 	{
 		RectTransform tr = this.gameObject.GetComponent<RectTransform>();
-		Vector3 pos = tr.position / _canvas.localScale.x;
+		Vector3 pos = tr.position / canvas.localScale.x;
 		float width = tr.rect.size.x / 2f;
 		float height = tr.rect.size.y / 2f;
 
@@ -22,7 +25,7 @@ public class Game : MonoBehaviour
 
 	public void OnClick()
 	{
-		Vector3 pos = _camera.ScreenToWorldPoint(Input.mousePosition);
+		Vector3 pos = cameraUI.ScreenToWorldPoint(Input.mousePosition);
 		pos.z = 0f;
 		//проверка что влезет
 		if (! ContainsPoint(pos))
@@ -47,7 +50,7 @@ public class Game : MonoBehaviour
 			}
 		}
 		Vector3 [] vertex = new Vector3[4];
-		pos /= _canvas.localScale.x;
+		pos /= canvas.localScale.x;
 		vertex[0] = new Vector3(pos.x + _width, pos.y + _height, 0);
 		vertex[1] = new Vector3(pos.x + _width, pos.y - _height, 0);
 		vertex[2] = new Vector3(pos.x - _width, pos.y + _height, 0);
@@ -66,7 +69,7 @@ public class Game : MonoBehaviour
 				for (int j=0; j<_rectangles.Count; j++)
 				{
 					//получить вершины для _rectangles[j] и проверить что точка не принадлежит прямоугольнику
-					posBase = _rectangles[j].transformOverride.position / _canvas.localScale.x;
+					posBase = _rectangles[j].transformOverride.position / canvas.localScale.x;
 					vertexBase[0] = new Vector2(posBase.x + _width, posBase.y + _height);
 					vertexBase[1] = new Vector2(posBase.x + _width, posBase.y - _height);
 					vertexBase[2] = new Vector2(posBase.x - _width, posBase.y + _height);
@@ -88,9 +91,16 @@ public class Game : MonoBehaviour
 		if (LoadPrefab.LoadUIPrefab(ref rectangle, _rectanglePrefab, null, this.gameObject.transform))
 		{
 			rectangle.transform.position = pos;
-			rectangle.Init();
+			rectangle.Init(this);
+			rectangle.RemoveEvent += Remove;
 			_rectangles.Add(rectangle);
 		}
+	}
+
+	void Remove(Rectangle rectangle)
+	{
+		rectangle.RemoveEvent -= Remove;
+		_rectangles.Remove(rectangle);
 	}
 
 	bool ContainsPoint(Vector3 point, Vector2[] vertex) //содержит ли прямоугольник точку
@@ -105,12 +115,10 @@ public class Game : MonoBehaviour
 		}
 	}
 
-	[SerializeField] Button		_bg;
-	[SerializeField] Button		_newGame;
+	[SerializeField] Button				_bg;
+	[SerializeField] Button				_newGame;
 
-	[SerializeField] GameObject	_rectanglePrefab;
-	[SerializeField] Camera		_camera;
-	[SerializeField] Transform	_canvas;
+	[SerializeField] GameObject			_rectanglePrefab;
 
 	List<Rectangle>				_rectangles;
 	float						_width = -1f;
