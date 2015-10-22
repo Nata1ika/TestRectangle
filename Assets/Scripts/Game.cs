@@ -61,9 +61,20 @@ public class Game : MonoBehaviour
 			}
 			if (_rectangles != null)
 			{
+				Vector2[] vertexBase = new Vector2[3];
+				Vector3 posBase;
 				for (int j=0; j<_rectangles.Count; j++)
 				{
 					//получить вершины для _rectangles[j] и проверить что точка не принадлежит прямоугольнику
+					posBase = _rectangles[j].transformOverride.position / _canvas.localScale.x;
+					vertexBase[0] = new Vector2(posBase.x + _width, posBase.y + _height);
+					vertexBase[1] = new Vector2(posBase.x + _width, posBase.y - _height);
+					vertexBase[2] = new Vector2(posBase.x - _width, posBase.y + _height);
+
+					if (ContainsPoint(vertex[i], vertexBase))
+					{
+						return true;
+					}
 				}
 			}
 		}
@@ -77,6 +88,7 @@ public class Game : MonoBehaviour
 		if (LoadPrefab.LoadUIPrefab(ref rectangle, _rectanglePrefab, null, this.gameObject.transform))
 		{
 			rectangle.transform.position = pos;
+			rectangle.Init();
 			_rectangles.Add(rectangle);
 		}
 	}
