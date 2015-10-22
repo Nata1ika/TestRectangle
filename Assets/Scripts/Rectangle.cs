@@ -1,10 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using System;
 
 public class Rectangle : MonoBehaviour 
 {
-	public System.Action<Rectangle> RemoveEvent;
+	public Action<Rectangle> 			RemoveEvent;
+	public Action<Vector3>				MoveEvent;
+	public Action<Rectangle, Rectangle>	LinkEvent;
 
 	public void Init(Game game)
 	{
@@ -47,25 +50,45 @@ public class Rectangle : MonoBehaviour
 	{
 		Debug.Log("Up");
 		float time = Time.time;
-		if (_countClick >= 2 && UnityEngine.Mathf.Abs(_timeFirstClick - time) <= _timeDeltaClick)
+		if (_countClick >= 2 && UnityEngine.Mathf.Abs(_timeFirstClick - time) <= _timeDeltaClick) //двойной клик - удаляем прямоугольник
 		{
 			Remove();
+		}
+		else //прямоугольник подвинулся
+		{
+			int index = _game.CanAdd(transformOverride.position, this);
+			//-2 прямоугольник вылез за допустимую область. его нужно подвинуть в первоначальное место
+			// >= 0 движение привело к наложению
+			if (index == -2 || index >= 0) 
+			{
+				transformOverride.position = _posBeforeDrag;
+				if (MoveEvent != null)
+				{
+					MoveEvent(_posBeforeDrag);
+				}
+				if (index >= 0 && LinkEvent != null)
+				{
+					LinkEvent(this, _game.GetRectangle(index));
+				}
+
+			}
+			//else if (index == -1) {} //прямоугольник подвинули правильно ничего не делаем
 		}
 	}
 
 	public void OnDrag()
 	{
 		Debug.Log("Drag");
-		Motion();
-	}
 
-
-	void Motion()
-	{
 		Vector3 pos = _game.cameraUI.ScreenToWorldPoint(Input.mousePosition);
 		pos.z = 0f;
 
 		transformOverride.position = pos;
+
+		if (MoveEvent != null)
+		{
+			MoveEvent(pos);
+		}
 	}
 
 	public void Remove()
