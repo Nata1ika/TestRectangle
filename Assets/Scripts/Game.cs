@@ -7,9 +7,12 @@ public class Game : MonoBehaviour
 {
 	public Camera				cameraUI;
 	public Transform			canvas;
+	public Transform			parentRectangle;
+	public Transform			parentLine;
 
 	void Start()
 	{
+		//определяем координаты вершин базовой области для создания прмоугольников
 		RectTransform tr = this.gameObject.GetComponent<RectTransform>();
 		Vector3 pos = tr.position / canvas.localScale.x;
 		float width = tr.rect.size.x / 2f;
@@ -20,6 +23,7 @@ public class Game : MonoBehaviour
 		_bgVertexPos[1] = new Vector2(pos.x + width, pos.y - height);
 		_bgVertexPos[2] = new Vector2(pos.x - width, pos.y + height);
 
+		//тут будет хрранить все прямоугольники
 		_rectangles = new List<Rectangle>();
 	}
 
@@ -35,6 +39,7 @@ public class Game : MonoBehaviour
 		}
 	}
 
+	//нажатие на пустое место базовой области
 	public void OnClick()
 	{
 		Vector3 pos = cameraUI.ScreenToWorldPoint(Input.mousePosition);
@@ -46,7 +51,28 @@ public class Game : MonoBehaviour
 		}
 	}
 
-	public int CanAdd(Vector3 pos, Rectangle exclusion) //-2 точка вылезла за область экрана; -1 нет совпадений с другими прямоугольниками; (0 - _rectangles.Count-1) индекс прямоугольника
+	//удалить все прямоугольники и связи
+	public void NewGame()
+	{
+		for (int i=_rectangles.Count-1; i>=0; i--)
+		{
+			_rectangles[i].Remove();
+		}
+	}
+
+	//удалить все связи
+	public void ClearLine()
+	{
+		for (int i=0; i<_rectangles.Count; i++)
+		{
+			_rectangles[i].lineController.RemoveAll(_rectangles[i]);
+		}
+	}
+
+	//определяем положение точки относительно других прямоугольников
+	//exclusion - исключение, этот прямоуголь ник проверять не нужно, так как точка является его вершиной
+	//-2 точка вылезла за область экрана; -1 нет совпадений с другими прямоугольниками; (0 - _rectangles.Count-1) индекс прямоугольника
+	public int CanAdd(Vector3 pos, Rectangle exclusion)
 	{
 		if (_width <= 0 || _height <= 0)
 		{
@@ -97,10 +123,11 @@ public class Game : MonoBehaviour
 		return -1;
 	}
 
+	//добавить новый прямоугольник в заданную точку
 	void Add(Vector3 pos)
 	{
 		Rectangle rectangle = null;
-		if (LoadPrefab.LoadUIPrefab(ref rectangle, _rectanglePrefab, null, this.gameObject.transform))
+		if (LoadPrefab.LoadUIPrefab(ref rectangle, _rectanglePrefab, null, parentRectangle))
 		{
 			rectangle.transform.position = pos;
 			rectangle.Init(this);
@@ -109,13 +136,15 @@ public class Game : MonoBehaviour
 		}
 	}
 
+	//удален прямоугольник
 	void Remove(Rectangle rectangle)
 	{
 		rectangle.RemoveEvent -= Remove;
 		_rectangles.Remove(rectangle);
 	}
 
-	bool ContainsPoint(Vector3 point, Vector2[] vertex) //содержит ли прямоугольник точку
+	//содержит ли прямоугольник точку
+	bool ContainsPoint(Vector3 point, Vector2[] vertex) 
 	{
 		if (point.x <= vertex[0].x && point.x >= vertex[2].x && point.y <= vertex[0].y && point.y >= vertex[1].y)
 		{
@@ -127,14 +156,13 @@ public class Game : MonoBehaviour
 		}
 	}
 
-	[SerializeField] Button				_bg;
-	[SerializeField] Button				_newGame;
+	[SerializeField] Button				_bg; //базовая область
+	[SerializeField] GameObject			_rectanglePrefab; //префаб прямоугольника
 
-	[SerializeField] GameObject			_rectanglePrefab;
+	List<Rectangle>						_rectangles; //список всех прямоугольниколв на сцене
 
-	List<Rectangle>				_rectangles;
-	float						_width = -1f;
-	float						_height = -1f;
+	float								_width = -1f; //ширина прямоугольников
+	float								_height = -1f; //высота прямоугольников
 
-	Vector2[]					_bgVertexPos;
+	Vector2[]							_bgVertexPos; //координаты вершин базовой области
 }

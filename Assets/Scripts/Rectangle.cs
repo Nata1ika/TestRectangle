@@ -5,14 +5,15 @@ using System;
 
 public class Rectangle : MonoBehaviour 
 {
-	public Action<Rectangle> 			RemoveEvent;
-	public Action<Vector3>				MoveEvent;
-	public Action<Rectangle, Rectangle>	LinkEvent;
+	public Action<Rectangle> 	RemoveEvent;
+	public Action<Vector3>		MoveEvent;
+	public Action<Rectangle>	LinkEvent;
+	public Game					game;
 
-	public void Init(Game game)
+	public void Init(Game setGame)
 	{
 		_image.color = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0.5f, 1f));
-		_game = game;
+		game = setGame;
 	}
 
 	public Transform transformOverride
@@ -27,9 +28,20 @@ public class Rectangle : MonoBehaviour
 		}
 	}
 
+	public LineController lineController
+	{
+		get
+		{
+			if (_lineController == null)
+			{
+				_lineController = gameObject.GetComponent<LineController>();
+			}
+			return _lineController;
+		}
+	}
+
 	public void OnPointerDown()
 	{
-		Debug.Log("Down");
 		_posBeforeDrag = transformOverride.position;
 
 		float time = Time.time;
@@ -48,7 +60,6 @@ public class Rectangle : MonoBehaviour
 
 	public void OnPointerUp()
 	{
-		Debug.Log("Up");
 		float time = Time.time;
 		if (_countClick >= 2 && UnityEngine.Mathf.Abs(_timeFirstClick - time) <= _timeDeltaClick) //двойной клик - удаляем прямоугольник
 		{
@@ -56,7 +67,7 @@ public class Rectangle : MonoBehaviour
 		}
 		else //прямоугольник подвинулся
 		{
-			int index = _game.CanAdd(transformOverride.position, this);
+			int index = game.CanAdd(transformOverride.position, this);
 			//-2 прямоугольник вылез за допустимую область. его нужно подвинуть в первоначальное место
 			// >= 0 движение привело к наложению
 			if (index == -2 || index >= 0) 
@@ -68,7 +79,7 @@ public class Rectangle : MonoBehaviour
 				}
 				if (index >= 0 && LinkEvent != null)
 				{
-					LinkEvent(this, _game.GetRectangle(index));
+					LinkEvent(game.GetRectangle(index));
 				}
 
 			}
@@ -78,9 +89,7 @@ public class Rectangle : MonoBehaviour
 
 	public void OnDrag()
 	{
-		Debug.Log("Drag");
-
-		Vector3 pos = _game.cameraUI.ScreenToWorldPoint(Input.mousePosition);
+		Vector3 pos = game.cameraUI.ScreenToWorldPoint(Input.mousePosition);
 		pos.z = 0f;
 
 		transformOverride.position = pos;
@@ -105,7 +114,8 @@ public class Rectangle : MonoBehaviour
 	[SerializeField] Button			_button;
 	[SerializeField] Image			_image;
 
-	Game							_game;
+	LineController					_lineController;
+
 	Vector3							_posBeforeDrag;
 	float							_timeFirstClick;
 	int								_countClick = 0;
